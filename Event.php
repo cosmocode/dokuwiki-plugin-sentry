@@ -87,13 +87,12 @@ class Event
             $this->setLogLevel(self::LVL_ERROR);
         }
 
-
         // log previous exception first
         if ($e->getPrevious() !== null) $this->addException($e->getPrevious());
 
         // prepare stack trace
         $stack = [];
-        foreach ($e->getTrace() as $frame) {
+        foreach (array_reverse($e->getTrace()) as $frame) {
             $stack[] = [
                 'filename' => $frame['file'],
                 'function' => $frame['function'],

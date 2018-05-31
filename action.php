@@ -33,8 +33,6 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
 
         // retry to send pending events
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'handle_indexer');
-
-        #throw new \Exception('hehe');
     }
 
     /**
