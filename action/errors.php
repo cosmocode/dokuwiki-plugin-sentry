@@ -12,7 +12,7 @@ if (!defined('DOKU_INC')) {
     die();
 }
 
-class action_plugin_sentry extends DokuWiki_Action_Plugin
+class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
 {
 
     /**
