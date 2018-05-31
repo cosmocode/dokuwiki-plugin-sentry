@@ -87,7 +87,7 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
         /** @var helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');
         $helper->logException($e);
-        $helper->showException($e);
+        echo $helper->formatException($e);
     }
 
     /**

@@ -15,7 +15,7 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
      *
      * @return array
      */
-    public function parseDSN()
+    protected function parseDSN()
     {
         $parts = parse_url($this->getConf('dsn'));
         $dsn = [];
@@ -34,7 +34,7 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
      *
      * @return string
      */
-    public function storeAPI()
+    protected function storeAPI()
     {
         $dsn = $this->parseDSN();
         return $dsn['protocol'] . '://' . $dsn['url'] . '/api/' . $dsn['project'] . '/store/';
@@ -45,7 +45,7 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
      *
      * @return string
      */
-    public function storeAuthHeader()
+    protected function storeAuthHeader()
     {
         $dsn = $this->parseDSN();
 
@@ -61,34 +61,49 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
     /**
      * Log an exception
      *
+     * If you need more control over the logged Event, use logEvent()
+     *
      * @param Throwable $e
      */
     public function logException(\Throwable $e)
     {
-        $event = Event::fromException($e);
+        $this->logEvent(Event::fromException($e));
+
+    }
+
+    /**
+     * Log an event
+     *
+     * @param Event $event
+     */
+    public function logEvent(Event $event)
+    {
         if ($this->sendEvent($event)) return;
         // still here? Event could not be sent immeadiately, store for later
         $this->saveEvent($event);
     }
 
     /**
-     * Formate an exception for the user
+     * Format an exception for the user in HTML
      *
      * @param Throwable $e
+     * @return string the HTML
      */
-    public function showException(\Throwable $e)
+    public function formatException(\Throwable $e)
     {
         global $conf;
-        echo '<div style="width:60%; margin: auto; background-color: #fcc;
+        $html = '<div style="width:60%; margin: auto; background-color: #fcc;
                 border: 1px solid #faa; padding: 0.5em 1em; font-family: sans-serif">';
-        echo '<h1>An error occured</h1>';
-        echo '<p>' . hsc(get_class($e)) . ': ' . $e->getMessage() . '</p>';
+        $html .= '<h1>An error occured</h1>';
+        $html .= '<p>' . hsc(get_class($e)) . ': ' . $e->getMessage() . '</p>';
         if ($conf['allowdebug']) {
-            echo '<p><code>' . hsc($e->getFile()) . ':' . hsc($e->getLine()) . '</code></p>';
-            echo '<pre>' . hsc($e->getTraceAsString()) . '</pre>';
+            $html .= '<p><code>' . hsc($e->getFile()) . ':' . hsc($e->getLine()) . '</code></p>';
+            $html .= '<pre>' . hsc($e->getTraceAsString()) . '</pre>';
         }
-        echo '<p>The error has been logged.</p>';
-        echo '</div>';
+        $html .= '<p>The error has been logged.</p>';
+        $html .= '</div>';
+
+        return $html;
     }
 
     /**
@@ -152,6 +167,8 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
 
     /**
      * Send the given event to sentry
+     *
+     * You most probably want to use logEvent() or logException() instead
      *
      * @param Event $event the event
      * @return bool was the event submitted successfully?
