@@ -78,9 +78,8 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
      */
     public function logEvent(Event $event)
     {
-        if ($this->sendEvent($event)) return;
-        // still here? Event could not be sent immeadiately, store for later
         $this->saveEvent($event);
+        if ($this->sendEvent($event)) $this->deleteEvent($event->getID());
     }
 
     /**

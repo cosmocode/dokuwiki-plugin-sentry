@@ -36,9 +36,9 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
     }
 
     /**
-     * [Custom event handler which performs action]
+     * Send pending tasks on indexer run
      *
-     * Called for event:
+     * Called for event: INDEXER_TASKS_RUN
      *
      * @param Doku_Event $event event object by reference
      * @param mixed $param [the parameters passed as fifth argument to register_hook() when this
