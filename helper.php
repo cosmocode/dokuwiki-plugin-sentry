@@ -99,9 +99,55 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
     public function saveEvent(Event $event)
     {
         global $conf;
-        $cachedir = $conf['cachedir'] . '_sentry/';
+        $cachedir = $conf['cachedir'] . '/_sentry/';
         $file = $cachedir . $event->getID() . '.json';
+        io_makeFileDir($file);
         file_put_contents($file, $event->getJSON());
+    }
+
+    /**
+     * Load a pending event
+     *
+     * @param string $id
+     * @return Event|null
+     */
+    public function loadEvent($id)
+    {
+        global $conf;
+        $cachedir = $conf['cachedir'] . '/_sentry/';
+        $file = $cachedir . $id . '.json';
+        if (!file_exists($file)) return null;
+        $json = file_get_contents($file);
+        return Event::fromJSON($json);
+    }
+
+    /**
+     * Delete a pending event
+     *
+     * @param string $id
+     */
+    public function deleteEvent($id)
+    {
+        global $conf;
+        $cachedir = $conf['cachedir'] . '/_sentry/';
+        $file = $cachedir . $id . '.json';
+        unlink($file);
+    }
+
+    /**
+     * Returns a list of event IDs that have not yet been sent
+     *
+     * @return string[]
+     */
+    public function getPendingEventIDs()
+    {
+        global $conf;
+        $cachedir = $conf['cachedir'] . '/_sentry/';
+
+        $files = glob($cachedir . '/*.json');
+        return array_map(function ($in) {
+            return basename($in, '.json');
+        }, $files);
     }
 
     /**

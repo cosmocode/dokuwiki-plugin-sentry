@@ -24,8 +24,6 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
      */
     public function register(Doku_Event_Handler $controller)
     {
-        $controller->register_hook('DOKUWIKI_STARTED', 'AFTER', $this, 'handle_dokuwiki_started');
-
         // catch all exceptions
         set_exception_handler([$this, 'exceptionHandler']);
         // turn errors into exceptions
@@ -33,6 +31,8 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
         // log fatal errors
         register_shutdown_function([$this, 'fatalHandler']);
 
+        // retry to send pending events
+        $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'handle_indexer');
     }
 
     /**
@@ -46,8 +46,23 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
      *
      * @return void
      */
-    public function handle_dokuwiki_started(Doku_Event $event, $param)
+    public function handle_indexer(Doku_Event $event, $param)
     {
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+        $events = $helper->getPendingEventIDs();
+        if (!count($events)) return;
+
+        $event->preventDefault();
+        $event->stopPropagation();
+
+        foreach ($events as $eid) {
+            $event = $helper->loadEvent($eid);
+            if ($event === null) continue;
+            if ($helper->sendEvent($event)) {
+                $helper->deleteEvent($eid);
+            }
+        }
     }
 
     /**
