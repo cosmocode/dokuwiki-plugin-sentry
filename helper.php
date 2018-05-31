@@ -26,6 +26,10 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
         $dsn['url'] = $parts['host'];
         if (!empty($parts['port'])) $dsn['url'] .= ':' . $parts['port'];
 
+        $path = dirname($parts['path']);
+        $path = trim($path, '/');
+        $dsn['path'] = "/$path";
+
         return $dsn;
     }
 
@@ -37,7 +41,7 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
     protected function storeAPI()
     {
         $dsn = $this->parseDSN();
-        return $dsn['protocol'] . '://' . $dsn['url'] . '/api/' . $dsn['project'] . '/store/';
+        return $dsn['protocol'] . '://' . $dsn['url'] . $dsn['path'] . '/api/' . $dsn['project'] . '/store/';
     }
 
     /**
