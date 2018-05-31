@@ -33,6 +33,8 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
 
         // retry to send pending events
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'handle_indexer');
+
+        #throw new \Exception('hehe');
     }
 
     /**
@@ -73,7 +75,7 @@ class action_plugin_sentry extends DokuWiki_Action_Plugin
         $error = error_get_last();
         if ($error !== null) return;
 
-        $e = new \ErrorException($error['message'], $error['type'], 1, $error['file'], $error['line']);
+        $e = new \ErrorException($error['message'], $error['type'], $error['type'], $error['file'], $error['line']);
         $this->exceptionHandler($e);
     }
 

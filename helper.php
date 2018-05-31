@@ -187,5 +187,7 @@ class helper_plugin_sentry extends DokuWiki_Action_Plugin
         if (!$ok) dbglog($http->resp_body, 'Sentry returned Error');
         return (bool)$ok;
     }
+
+
 }
 

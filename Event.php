@@ -8,6 +8,12 @@ class Event
     const CLIENT = 'DokuWiki-SentryPlugin';
     const VERSION = 1;
 
+    const LVL_DEBUG = 'debug';
+    const LVL_INFO = 'info';
+    const LVL_WARN = 'warning';
+    const LVL_ERROR = 'error';
+    const LVL_FATAL = 'fatal';
+
     protected $data = [];
 
     /**
@@ -21,7 +27,9 @@ class Event
         $this->data['event_id'] = md5(random_bytes(512));
         $this->data['timestamp'] = gmdate('Y-m-d\TH:i:s');
         $this->data['logger'] = 'default';
+        $this->data['level'] = self::LVL_ERROR;
         $this->data['platform'] = 'php';
+        $this->data['server_name'] = $_SERVER['SERVER_NAME'];
         $this->data['sdk'] = [
             'name' => self::CLIENT,
             'version' => self::VERSION,
@@ -51,6 +59,14 @@ class Event
     }
 
     /**
+     * @param string $level one of the LVL_* constants
+     */
+    public function setLogLevel($level)
+    {
+        $this->data['level'] = $level;
+    }
+
+    /**
      * Add the exception to the event
      *
      * Recurses into previous exceptions
@@ -62,6 +78,15 @@ class Event
         if (!is_array($this->data['exception'])) {
             $this->data['exception'] = ['values' => []];
         }
+
+        // ErrorExceptions have a level
+        // we set it first, so older Exception overwrite newer ones when they are nested
+        if (method_exists($e, 'getSeverity')) {
+            $this->setLogLevel($this->translateSeverity($e->getSeverity()));
+        } else {
+            $this->setLogLevel(self::LVL_ERROR);
+        }
+
 
         // log previous exception first
         if ($e->getPrevious() !== null) $this->addException($e->getPrevious());
@@ -76,6 +101,7 @@ class Event
                 'vars' => $frame['args']
             ];
         }
+
 
         // add exception
         $this->data['exception']['values'][] = [
@@ -186,6 +212,50 @@ class Event
         $this->data['contexts']['os'] = [
             'name' => $browser->getPlatform(),
         ];
+    }
+
+    /**
+     * Translate a PHP Error constant into a Sentry log level group
+     *
+     * @param int $severity PHP E_$x error constant
+     * @return string          Sentry log level group
+     */
+    protected function translateSeverity($severity)
+    {
+        switch ($severity) {
+            case E_ERROR:
+                return self::LVL_ERROR;
+            case E_WARNING:
+                return self::LVL_WARN;
+            case E_PARSE:
+                return self::LVL_ERROR;
+            case E_NOTICE:
+                return self::LVL_INFO;
+            case E_CORE_ERROR:
+                return self::LVL_ERROR;
+            case E_CORE_WARNING:
+                return self::LVL_WARN;
+            case E_COMPILE_ERROR:
+                return self::LVL_ERROR;
+            case E_COMPILE_WARNING:
+                return self::LVL_WARN;
+            case E_USER_ERROR:
+                return self::LVL_ERROR;
+            case E_USER_WARNING:
+                return self::LVL_WARN;
+            case E_USER_NOTICE:
+                return self::LVL_INFO;
+            case E_STRICT:
+                return self::LVL_INFO;
+            case E_RECOVERABLE_ERROR:
+                return self::LVL_ERROR;
+            case E_DEPRECATED:
+                return self::LVL_WARN;
+            case E_USER_DEPRECATED:
+                return self::LVL_WARN;
+            default:
+                return self::LVL_ERROR;
+        }
     }
 
     /**
