@@ -258,6 +258,50 @@ class Event
     }
 
     /**
+     * Get the PHP Error constant as string for logging purposes
+     *
+     * @param int     $type PHP E_$x error constant
+     * @return string       E_$x error constant as string
+     */
+    protected function errorTypeToString($type)
+    {
+        switch ($type) {
+            case E_ERROR:
+                return 'E_ERROR';
+            case E_WARNING:
+                return 'E_WARNING';
+            case E_PARSE:
+                return 'E_PARSE';
+            case E_NOTICE:
+                return 'E_NOTICE';
+            case E_CORE_ERROR:
+                return 'E_CORE_ERROR';
+            case E_CORE_WARNING:
+                return 'E_CORE_WARNING';
+            case E_COMPILE_ERROR:
+                return 'E_COMPILE_ERROR';
+            case E_COMPILE_WARNING:
+                return 'E_COMPILE_WARNING';
+            case E_USER_ERROR:
+                return 'E_USER_ERROR';
+            case E_USER_WARNING:
+                return 'E_USER_WARNING';
+            case E_USER_NOTICE:
+                return 'E_USER_NOTICE';
+            case E_STRICT:
+                return 'E_STRICT';
+            case E_RECOVERABLE_ERROR:
+                return 'E_RECOVERABLE_ERROR';
+            case E_DEPRECATED:
+                return 'E_DEPRECATED';
+            case E_USER_DEPRECATED:
+                return 'E_USER_DEPRECATED';
+            default:
+                return 'E_UNKNOWN_ERROR_TYPE';
+        }
+    }
+
+    /**
      * Load an event from JSON encoded data
      *
      * @param string $json
@@ -279,6 +323,42 @@ class Event
         $ev = new Event();
         $ev->addException($e);
         return $ev;
+    }
+
+    /**
+     * @param array $error
+     *
+     * @return Event
+     */
+    public static function fromError($error)
+    {
+
+        $ev = new Event();
+        $ev->setError($error);
+        return $ev;
+    }
+
+    protected function setError($error)
+    {
+        $this->data['exception'] = [
+            'values' => [
+                [
+                    'type' => $this->errorTypeToString($error['type']),
+                    'value' => $error['message'],
+                    'stacktrace' => [
+                        'frames' => [
+                            [
+                                'filename' => $error['file'],
+                                'function' => '',
+                                'lineno' => $error['line'],
+                                'vars' => [],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $this->setLogLevel($this->translateSeverity($error['type']));
     }
 
 }

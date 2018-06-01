@@ -8,6 +8,8 @@
 
 // must be run within Dokuwiki
 
+use dokuwiki\plugin\sentry\Event;
+
 if (!defined('DOKU_INC')) {
     die();
 }
@@ -75,8 +77,10 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
             return;
         }
 
-        $e = new \ErrorException($error['message'], $error['type'], $error['type'], $error['file'], $error['line']);
-        $this->exceptionHandler($e);
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+        $event = Event::fromError($error);
+        $helper->logEvent($event);
     }
 
     /**
