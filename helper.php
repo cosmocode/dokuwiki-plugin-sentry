@@ -8,7 +8,7 @@ use dokuwiki\plugin\sentry\Event;
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Andreas Gohr <gohr@cosmocode.de>
  */
-class helper_plugin_sentry extends DokuWiki_Action_Plugin
+class helper_plugin_sentry extends DokuWiki_Plugin
 {
     /**
      * Parse the DSN configuration into its parts
