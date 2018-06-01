@@ -2,17 +2,39 @@
 
 namespace dokuwiki\plugin\sentry;
 
+/**
+ * A Sentry Event
+ */
 class Event
 {
-
     const CLIENT = 'DokuWiki-SentryPlugin';
     const VERSION = 1;
 
+    // the Sentry log levels
     const LVL_DEBUG = 'debug';
     const LVL_INFO = 'info';
     const LVL_WARN = 'warning';
     const LVL_ERROR = 'error';
     const LVL_FATAL = 'fatal';
+
+    // core error types mapped to severity and name
+    const CORE_ERRORS = [
+        E_ERROR => [self::LVL_ERROR, 'E_ERROR'],
+        E_WARNING => [self::LVL_WARN, 'E_WARNING'],
+        E_PARSE => [self::LVL_ERROR, 'E_PARSE'],
+        E_NOTICE => [self::LVL_INFO, 'E_NOTICE'],
+        E_CORE_ERROR => [self::LVL_ERROR, 'E_CORE_ERROR'],
+        E_CORE_WARNING => [self::LVL_WARN, 'E_CORE_WARNING'],
+        E_COMPILE_ERROR => [self::LVL_ERROR, 'E_COMPILE_ERROR'],
+        E_COMPILE_WARNING => [self::LVL_WARN, 'E_COMPILE_WARNING'],
+        E_USER_ERROR => [self::LVL_ERROR, 'E_USER_ERROR'],
+        E_USER_WARNING => [self::LVL_WARN, 'E_USER_WARNING'],
+        E_USER_NOTICE => [self::LVL_INFO, 'E_USER_NOTICE'],
+        E_STRICT => [self::LVL_INFO, 'E_STRICT'],
+        E_RECOVERABLE_ERROR => [self::LVL_ERROR, 'E_RECOVERABLE_ERROR'],
+        E_DEPRECATED => [self::LVL_WARN, 'E_DEPRECATED'],
+        E_USER_DEPRECATED => [self::LVL_WARN, 'E_USER_DEPRECATED'],
+    ];
 
     protected $data = [];
 
@@ -67,7 +89,7 @@ class Event
     }
 
     /**
-     * Add the exception to the event
+     * Add an exception as cause of this event
      *
      * Recurses into previous exceptions
      *
@@ -82,13 +104,15 @@ class Event
         // ErrorExceptions have a level
         // we set it first, so older Exception overwrite newer ones when they are nested
         if (method_exists($e, 'getSeverity')) {
-            $this->setLogLevel($this->translateSeverity($e->getSeverity()));
+            $this->setLogLevel($this->errorTypeToSeverity($e->getSeverity()));
         } else {
             $this->setLogLevel(self::LVL_ERROR);
         }
 
         // log previous exception first
-        if ($e->getPrevious() !== null) $this->addException($e->getPrevious());
+        if ($e->getPrevious() !== null) {
+            $this->addException($e->getPrevious());
+        }
 
         // prepare stack trace
         $stack = [];
@@ -101,7 +125,6 @@ class Event
             ];
         }
 
-
         // add exception
         $this->data['exception']['values'][] = [
             'type' => get_class($e),
@@ -111,12 +134,42 @@ class Event
     }
 
     /**
+     * Set an error as the cause of this event
+     *
+     * @param array $error
+     */
+    protected function setError($error)
+    {
+        $this->data['exception'] = [
+            'values' => [
+                [
+                    'type' => $this->errorTypeToString($error['type']),
+                    'value' => $error['message'],
+                    'stacktrace' => [
+                        'frames' => [
+                            [
+                                'filename' => $error['file'],
+                                'function' => '',
+                                'lineno' => $error['line'],
+                                'vars' => [],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $this->setLogLevel($this->errorTypeToSeverity($error['type']));
+    }
+
+    /**
      * @return string
      */
     public function getJSON()
     {
         return json_encode($this->data);
     }
+
+    // region context initializers
 
     /**
      * Initialize the User Context
@@ -144,7 +197,6 @@ class Event
         $url = is_ssl() ? 'https://' : 'http://';
         $url .= $_SERVER['HTTP_HOST'];
         $url .= $_SERVER['REQUEST_URI'];
-
 
         $this->data['request'] = [
             'url' => $url,
@@ -213,93 +265,33 @@ class Event
         ];
     }
 
+    // endregion
+
     /**
      * Translate a PHP Error constant into a Sentry log level group
      *
-     * @param int $severity PHP E_$x error constant
+     * @param int $type PHP E_$x error constant
      * @return string          Sentry log level group
      */
-    protected function translateSeverity($severity)
+    protected function errorTypeToSeverity($type)
     {
-        switch ($severity) {
-            case E_ERROR:
-                return self::LVL_ERROR;
-            case E_WARNING:
-                return self::LVL_WARN;
-            case E_PARSE:
-                return self::LVL_ERROR;
-            case E_NOTICE:
-                return self::LVL_INFO;
-            case E_CORE_ERROR:
-                return self::LVL_ERROR;
-            case E_CORE_WARNING:
-                return self::LVL_WARN;
-            case E_COMPILE_ERROR:
-                return self::LVL_ERROR;
-            case E_COMPILE_WARNING:
-                return self::LVL_WARN;
-            case E_USER_ERROR:
-                return self::LVL_ERROR;
-            case E_USER_WARNING:
-                return self::LVL_WARN;
-            case E_USER_NOTICE:
-                return self::LVL_INFO;
-            case E_STRICT:
-                return self::LVL_INFO;
-            case E_RECOVERABLE_ERROR:
-                return self::LVL_ERROR;
-            case E_DEPRECATED:
-                return self::LVL_WARN;
-            case E_USER_DEPRECATED:
-                return self::LVL_WARN;
-            default:
-                return self::LVL_ERROR;
-        }
+        if(isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][0];
+        return self::LVL_ERROR;
     }
 
     /**
      * Get the PHP Error constant as string for logging purposes
      *
-     * @param int     $type PHP E_$x error constant
+     * @param int $type PHP E_$x error constant
      * @return string       E_$x error constant as string
      */
     protected function errorTypeToString($type)
     {
-        switch ($type) {
-            case E_ERROR:
-                return 'E_ERROR';
-            case E_WARNING:
-                return 'E_WARNING';
-            case E_PARSE:
-                return 'E_PARSE';
-            case E_NOTICE:
-                return 'E_NOTICE';
-            case E_CORE_ERROR:
-                return 'E_CORE_ERROR';
-            case E_CORE_WARNING:
-                return 'E_CORE_WARNING';
-            case E_COMPILE_ERROR:
-                return 'E_COMPILE_ERROR';
-            case E_COMPILE_WARNING:
-                return 'E_COMPILE_WARNING';
-            case E_USER_ERROR:
-                return 'E_USER_ERROR';
-            case E_USER_WARNING:
-                return 'E_USER_WARNING';
-            case E_USER_NOTICE:
-                return 'E_USER_NOTICE';
-            case E_STRICT:
-                return 'E_STRICT';
-            case E_RECOVERABLE_ERROR:
-                return 'E_RECOVERABLE_ERROR';
-            case E_DEPRECATED:
-                return 'E_DEPRECATED';
-            case E_USER_DEPRECATED:
-                return 'E_USER_DEPRECATED';
-            default:
-                return 'E_UNKNOWN_ERROR_TYPE';
-        }
+        if(isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
+        return 'E_UNKNOWN_ERROR_TYPE';
     }
+
+    // region factory methods
 
     /**
      * Load an event from JSON encoded data
@@ -326,39 +318,20 @@ class Event
     }
 
     /**
-     * @param array $error
+     * Generate an event from an error
      *
+     * Errors can be obtained via error_get_last()
+     *
+     * @param array $error
      * @return Event
      */
     public static function fromError($error)
     {
-
         $ev = new Event();
         $ev->setError($error);
         return $ev;
     }
 
-    protected function setError($error)
-    {
-        $this->data['exception'] = [
-            'values' => [
-                [
-                    'type' => $this->errorTypeToString($error['type']),
-                    'value' => $error['message'],
-                    'stacktrace' => [
-                        'frames' => [
-                            [
-                                'filename' => $error['file'],
-                                'function' => '',
-                                'lineno' => $error['line'],
-                                'vars' => [],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-        $this->setLogLevel($this->translateSeverity($error['type']));
-    }
+    // endregion
 
 }
