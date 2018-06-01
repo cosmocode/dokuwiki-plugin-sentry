@@ -28,7 +28,10 @@ class helper_plugin_sentry extends DokuWiki_Plugin
 
         $path = dirname($parts['path']);
         $path = trim($path, '/');
-        $dsn['path'] = "/$path";
+        if (!empty($path)) {
+            $path = '/' . $path;
+        }
+        $dsn['path'] = $path;
 
         return $dsn;
     }
