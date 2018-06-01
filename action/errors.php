@@ -1,5 +1,7 @@
 <?php
 
+use dokuwiki\plugin\sentry\Event;
+
 /**
  * DokuWiki Plugin sentry (Action Component)
  *
@@ -24,8 +26,8 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
 
         // catch all exceptions
         set_exception_handler([$this, 'exceptionHandler']);
-        // turn errors into exceptions
-        set_error_handler([$this, 'errorConverter']);
+        // log non fatal errors
+        set_error_handler([$this, 'errorHandler']);
         // log fatal errors
         register_shutdown_function([$this, 'fatalHandler']);
 
@@ -77,8 +79,10 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
             return;
         }
 
-        $e = new \ErrorException($error['message'], $error['type'], $error['type'], $error['file'], $error['line']);
-        $this->exceptionHandler($e);
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+        $event = Event::fromError($error);
+        $helper->logEvent($event);
     }
 
     /**
@@ -97,21 +101,26 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
     /**
      * Error handler to convert old school warnings, notices, etc to exceptions
      *
-     * @param int $errno
-     * @param string $errstr
-     * @param string $errfile
-     * @param int $errline
-     * @return bool
-     * @throws \ErrorException
+     * @param int $type
+     * @param string $message
+     * @param string $file
+     * @param int $line
+     * @return false we always let the default handler continue
      */
-    public function errorConverter($errno, $errstr, $errfile, $errline)
+    public function errorHandler($type, $message, $file, $line)
     {
-        if (!(error_reporting() & $errno)) {
-            // This error code is not included in error_reporting, so let it fall
-            // through to the standard PHP error handler
+        if (!(error_reporting() & $type)) {
+            // This error code is not included in error_reporting, so we don't log it either
             return false;
         }
-        throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+
+        $error = compact('type', 'message', 'file', 'line');
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+        $event = Event::fromError($error);
+        $helper->logEvent($event);
+
+        return false;
     }
 
 }
