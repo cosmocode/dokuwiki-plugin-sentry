@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * DokuWiki Plugin sentry (Action Component)
+ *
+ * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @author  Andreas Gohr <dokuwiki@cosmocode.de>
+ */
 class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
 {
 
@@ -12,6 +18,9 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
      */
     public function register(Doku_Event_Handler $controller)
     {
+        if (!$this->getConf('dsn')) {
+            return;
+        }
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handleAjax');
     }
 
@@ -39,7 +48,9 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
                     [
                         'type' => $INPUT->str('name'),
                         'value' => $INPUT->str('message'),
-                        'stacktrace' => $this->parseJavaScriptStracktrace($INPUT->str('stack')),
+                        'stacktrace' => [
+                            'frames' => $this->parseJavaScriptStracktrace($INPUT->str('stack')),
+                        ],
                     ],
                 ],
             ],
@@ -53,16 +64,40 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
         $sentryHelper->logEvent($sentryEvent);
     }
 
-    protected function parseJavaScriptStracktrace($trace) {
-        return [
-            'frames' => [
-                [
-                    'filename' => 'abc.js',
-                    'function' => 'foo()',
-                    'lineno' => 57,
-                    'vars' => [],
-                ],
-            ],
-        ];
+    /**
+     * Tries to parse a JavaScript stack trace into sentry frames
+     *
+     * @see https://github.com/errwischt/stacktrace-parser/blob/master/lib/stacktrace-parser.js
+     * @param string $trace
+     * @return array
+     */
+    protected function parseJavaScriptStracktrace($trace)
+    {
+        $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?\S+' .
+            '(?: \[as \S+\])?)) )?\(?((?:file|http|https):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
+        $gecko = '/^(?:\s*([^@]*)(?:\((.*?)\))?@)?(\S.*?):(\d+)(?::(\d+))?\s*$/i';
+
+        $frames = [];
+        $lines = explode("\n", $trace);
+        foreach ($lines as $line) {
+            if (preg_match($gecko, $line, $parts)) {
+                $frames[] = [
+                    'filename' => $parts[3],
+                    'function' => $parts[1] || '<unknown>',
+                    'lineno' => (int)$parts[4],
+                    'colno' => (int)$parts[5]
+                ];
+            } else {
+                if (preg_match($chrome, $line, $parts)) {
+                    $frames[] = [
+                        'file' => $parts[2],
+                        'function' => $parts[1] || '<unknown>',
+                        'lineno' => (int)$parts[3],
+                        'colno' => (int)$parts[4]
+                    ];
+                }
+            }
+        }
+        return $frames;
     }
 }
