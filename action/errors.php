@@ -1,17 +1,11 @@
 <?php
+
 /**
  * DokuWiki Plugin sentry (Action Component)
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Andreas Gohr <gohr@cosmocode.de>
  */
-
-// must be run within Dokuwiki
-
-if (!defined('DOKU_INC')) {
-    die();
-}
-
 class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
 {
 
@@ -24,6 +18,10 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
      */
     public function register(Doku_Event_Handler $controller)
     {
+        if (!$this->getConf('dsn')) {
+            return;
+        }
+
         // catch all exceptions
         set_exception_handler([$this, 'exceptionHandler']);
         // turn errors into exceptions
@@ -51,14 +49,18 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
         /** @var helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');
         $events = $helper->getPendingEventIDs();
-        if (!count($events)) return;
+        if (!count($events)) {
+            return;
+        }
 
         $event->preventDefault();
         $event->stopPropagation();
 
         foreach ($events as $eid) {
             $event = $helper->loadEvent($eid);
-            if ($event === null) continue;
+            if ($event === null) {
+                continue;
+            }
             if ($helper->sendEvent($event)) {
                 $helper->deleteEvent($eid);
             }
