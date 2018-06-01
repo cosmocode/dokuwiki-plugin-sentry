@@ -71,7 +71,9 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
     public function fatalHandler()
     {
         $error = error_get_last();
-        if ($error !== null) return;
+        if ($error === null) {
+            return;
+        }
 
         $e = new \ErrorException($error['message'], $error['type'], $error['type'], $error['file'], $error['line']);
         $this->exceptionHandler($e);
