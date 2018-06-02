@@ -35,6 +35,9 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
 
         // retry to send pending events
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'handle_indexer');
+
+        // log deprecated function use
+        $controller->register_hook('INFO_DEPRECATION_LOG', 'AFTER', $this, 'handle_deprecation');
     }
 
     /**
@@ -69,6 +72,46 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
                 $helper->deleteEvent($eid);
             }
         }
+    }
+
+    /**
+     * Send deprecated function use to Sentry
+     *
+     * Called for event: INFO_DEPRECATION_LOG
+     *
+     * @param Doku_Event $event event object by reference
+     * @param mixed $param [the parameters passed as fifth argument to register_hook() when this
+     *                           handler was registered]
+     *
+     * @return void
+     */
+    public function handle_deprecation(Doku_Event $event, $param)
+    {
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+
+        $msg = $event->data['called'] . ' is deprecated.';
+        if (!empty($event->data['alternative'])) {
+            $msg .= ' Use ' . $event->data['alternative'] . ' instead.';
+        }
+
+        $data = [
+            'exception' => [
+                'values' => [
+                    [
+                        'type' => 'Deprecated',
+                        'value' => $msg,
+                        'stacktrace' => [
+                            'frames' => Event::backTraceFrames($event->data['trace']),
+                        ],
+                    ],
+                ],
+            ],
+            'level' => Event::LVL_WARN,
+        ];
+
+        $event = new Event($data);
+        $helper->logEvent($event);
     }
 
     /**

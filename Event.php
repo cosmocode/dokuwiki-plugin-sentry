@@ -121,22 +121,11 @@ class Event
             $this->addException($e->getPrevious());
         }
 
-        // prepare stack trace
-        $stack = [];
-        foreach (array_reverse($e->getTrace()) as $frame) {
-            $stack[] = [
-                'filename' => $frame['file'],
-                'function' => $frame['function'],
-                'lineno' => $frame['line'],
-                'vars' => $frame['args']
-            ];
-        }
-
         // add exception
         $this->data['exception']['values'][] = [
             'type' => get_class($e),
             'value' => $e->getMessage(),
-            'stacktrace' => ['frames' => $stack]
+            'stacktrace' => ['frames' => self::backTraceFrames($e->getTrace())],
         ];
     }
 
@@ -296,6 +285,26 @@ class Event
     {
         if(isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
         return 'E_UNKNOWN_ERROR_TYPE';
+    }
+
+    /**
+     * Convert a PHP backtrace to Sentry stacktrace frames
+     *
+     * @param array $trace
+     * @return array
+     */
+    public static function backTraceFrames($trace)
+    {
+        $frames = [];
+        foreach (array_reverse($trace) as $frame) {
+            $frames[] = [
+                'filename' => $frame['file'],
+                'function' => $frame['function'],
+                'lineno' => $frame['line'],
+                'vars' => $frame['args'],
+            ];
+        }
+        return $frames;
     }
 
     // region factory methods
