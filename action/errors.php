@@ -11,6 +11,8 @@ use dokuwiki\plugin\sentry\Event;
 class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
 {
 
+    protected $lastHandledError;
+
     /**
      * Registers a callback function for a given event
      *
@@ -78,6 +80,10 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
         if ($error === null) {
             return;
         }
+        // was this error already processed in error handler? ignore it
+        if ($error == $this->lastHandledError) {
+            return;
+        }
 
         /** @var helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');
@@ -99,7 +105,7 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
     }
 
     /**
-     * Error handler to convert old school warnings, notices, etc to exceptions
+     * Error handler to log old school warnings, notices, etc
      *
      * @param int $type
      * @param string $message
@@ -109,12 +115,20 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
      */
     public function errorHandler($type, $message, $file, $line)
     {
-        if (!(error_reporting() & $type)) {
-            // This error code is not included in error_reporting, so we don't log it either
+        $error = compact('type', 'message', 'file', 'line');
+        $this->lastHandledError = $error;
+
+        // error_reporting = 0 -> error was supressed, never handle it
+        if (error_reporting() === 0) {
             return false;
         }
 
-        $error = compact('type', 'message', 'file', 'line');
+        if (!(error_reporting() & $type)) {
+            // This error code is not included in error_reporting, so we don't log it either
+            // FIXME we could introduce our own setting to check against here
+            return false;
+        }
+
         /** @var helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');
         $event = Event::fromError($error);
