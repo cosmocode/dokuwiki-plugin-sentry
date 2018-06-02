@@ -191,6 +191,15 @@ class helper_plugin_sentry extends DokuWiki_Plugin
         return (bool)$ok;
     }
 
-
+    /**
+     * Return the wanted error reporting
+     *
+     * @return int
+     */
+    public function errorReporting() {
+        $conf = (int) $this->getConf('errors');
+        if($conf === 0) return error_reporting();
+        return $conf;
+    }
 }
 

@@ -123,14 +123,15 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
             return false;
         }
 
-        if (!(error_reporting() & $type)) {
-            // This error code is not included in error_reporting, so we don't log it either
-            // FIXME we could introduce our own setting to check against here
+        /** @var helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+
+        // Check if this error code is wanted for sentry logging
+        if (!($helper->errorReporting() & $type)) {
             return false;
         }
 
-        /** @var helper_plugin_sentry $helper */
-        $helper = plugin_load('helper', 'sentry');
+        // log it
         $event = Event::fromError($error);
         $helper->logEvent($event);
 

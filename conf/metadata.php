@@ -7,4 +7,5 @@
 
 
 $meta['dsn'] = array('string');
+$meta['errors'] = array('\\dokuwiki\\plugin\\sentry\\conf\\Setting');
 

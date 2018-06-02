@@ -6,4 +6,4 @@
  */
 
 $conf['dsn']    = '';
-
+$conf['errors'] = 0;
