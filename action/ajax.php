@@ -49,7 +49,7 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
                         'type' => $INPUT->str('name'),
                         'value' => $INPUT->str('message'),
                         'stacktrace' => [
-                            'frames' => $this->parseJavaScriptStracktrace($INPUT->str('stack')),
+                            'frames' => $this->parseJavaScriptStacktrace($INPUT->str('stack'))
                         ],
                     ],
                 ],
@@ -71,7 +71,7 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
      * @param string $trace
      * @return array
      */
-    protected function parseJavaScriptStracktrace($trace)
+    protected function parseJavaScriptStacktrace($trace)
     {
         $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?\S+' .
             '(?: \[as \S+\])?)) )?\(?((?:file|http|https):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
@@ -82,20 +82,18 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
         foreach ($lines as $line) {
             if (preg_match($gecko, $line, $parts)) {
                 $frames[] = [
-                    'filename' => $parts[3],
-                    'function' => $parts[1] || '<unknown>',
+                    'filename' => $parts[3] ? $parts[3] : '<unknown file>',
+                    'function' => $parts[1] ? $parts[1] : '<unknown function>',
                     'lineno' => (int)$parts[4],
                     'colno' => (int)$parts[5]
                 ];
-            } else {
-                if (preg_match($chrome, $line, $parts)) {
-                    $frames[] = [
-                        'file' => $parts[2],
-                        'function' => $parts[1] || '<unknown>',
-                        'lineno' => (int)$parts[3],
-                        'colno' => (int)$parts[4]
-                    ];
-                }
+            } elseif (preg_match($chrome, $line, $parts)) {
+                $frames[] = [
+                    'file' => $parts[2] ? $parts[2] : '<unknown file>',
+                    'function' => $parts[1] ? $parts[1] : '<unknown function>',
+                    'lineno' => (int)$parts[3],
+                    'colno' => (int)$parts[4]
+                ];
             }
         }
         return $frames;
