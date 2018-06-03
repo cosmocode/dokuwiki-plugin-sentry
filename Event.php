@@ -56,6 +56,7 @@ class Event
             'name' => self::CLIENT,
             'version' => self::VERSION,
         ];
+        $this->data['release'] = getVersion();
 
         $this->data['contexts'] = [];
         $this->initUserContext();
