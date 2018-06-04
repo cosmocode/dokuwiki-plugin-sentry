@@ -2,7 +2,7 @@
 /**
  * english language file for sentry plugin
  *
- * @author Andreas Gohr <gohr@cosmocode.de>
+ * @author Andreas Gohr, Michael Große <dokuwiki@cosmocode.de>
  */
 
 // keys need to match the config setting name

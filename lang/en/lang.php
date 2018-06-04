@@ -2,7 +2,7 @@
 /**
  * English language file for sentry plugin
  *
- * @author Andreas Gohr <gohr@cosmocode.de>
+ * @author Andreas Gohr, Michael Große <dokuwiki@cosmocode.de>
  */
 
 // menu entry for admin plugins

@@ -2,7 +2,7 @@
 /**
  * Default settings for the sentry plugin
  *
- * @author Andreas Gohr <gohr@cosmocode.de>
+ * @author Andreas Gohr, Michael Große <dokuwiki@cosmocode.de>
  */
 
 $conf['dsn']    = '';

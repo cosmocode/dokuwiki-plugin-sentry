@@ -6,7 +6,7 @@ use dokuwiki\plugin\sentry\Event;
  * DokuWiki Plugin sentry (Helper Component)
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
- * @author  Andreas Gohr <gohr@cosmocode.de>
+ * @author  Andreas Gohr, Michael Große <dokuwiki@cosmocode.de>
  */
 class helper_plugin_sentry extends DokuWiki_Plugin
 {
