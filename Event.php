@@ -57,6 +57,13 @@ class Event
             'version' => self::VERSION,
         ];
 
+        /** @var \helper_plugin_sentry $helper */
+        $helper = plugin_load('helper', 'sentry');
+        $env = $helper->getConf('env');
+        if ($env) {
+            $this->data['environment'] = $env;
+        }
+
         $this->data['contexts'] = [];
         $this->initUserContext();
         $this->initHttpContext();

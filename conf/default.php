@@ -6,4 +6,5 @@
  */
 
 $conf['dsn']    = '';
+$conf['env']    = '';
 $conf['errors'] = 0;
