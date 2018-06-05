@@ -152,7 +152,8 @@ class helper_plugin_sentry extends DokuWiki_Plugin
         global $conf;
         $cachedir = $conf['cachedir'] . '/_sentry/';
         $file = $cachedir . $id . '.json';
-        unlink($file);
+        // the event may have been deleted in the meantime
+        @unlink($file);
     }
 
     /**
