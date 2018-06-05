@@ -56,6 +56,7 @@ class Event
             'name' => self::CLIENT,
             'version' => self::VERSION,
         ];
+        $this->data['release'] = getVersion();
 
         /** @var \helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');
@@ -71,6 +72,7 @@ class Event
         $this->initRuntimeContext();
         $this->initBrowserContext();
         $this->initOsContext();
+        $this->initModules();
 
         if (is_array($data)) {
             $this->data = array_merge($this->data, $data);
@@ -259,6 +261,58 @@ class Event
         $this->data['contexts']['os'] = [
             'name' => $browser->getPlatform(),
         ];
+    }
+
+    /**
+     * Adds the enabled plugins and the current template to the modules section
+     */
+    protected function initModules()
+    {
+        $this->data['modules'] = [];
+        $this->addPluginsToModules();
+        $this->addTemplateToModules();
+    }
+
+    /**
+     * Writes the enabled plugins and their version to the modules section
+     *
+     * If a plugin.info.txt can not be read, than an error message is recorded instead of the version
+     *
+     * see https://docs.sentry.io/clientdev/attributes/#optional-attributes
+     */
+    protected function addPluginsToModules()
+    {
+        /* @var \Doku_Plugin_Controller $plugin_controller */
+        global $plugin_controller;
+        $pluginlist = $plugin_controller->getList('', false);
+        foreach ($pluginlist as $pluginName) {
+            $infopath = DOKU_PLUGIN . $pluginName . '/plugin.info.txt';
+            if (is_readable($infopath)) {
+                $pluginInfo = confToHash($infopath);
+                $this->data['modules']['plugin.' . $pluginName] = $pluginInfo['date'];
+            } else {
+                $this->data['modules']['plugin.' . $pluginName] = 'plugin.info.txt unreadable';
+            }
+        }
+    }
+
+    /**
+     * Writes the current template and its version to the modules section
+     *
+     * If a template.info.txt can not be read, than an error message is recorded instead of the version
+     *
+     * see https://docs.sentry.io/clientdev/attributes/#optional-attributes
+     */
+    protected function addTemplateToModules()
+    {
+        global $conf;
+        $tplpath = DOKU_TPLINC . 'template.info.txt';
+        if (is_readable($tplpath)) {
+            $templateInfo = confToHash($tplpath);
+            $this->data['modules']['template.' . $conf['template']] = $templateInfo['date'];
+        } else {
+            $this->data['modules']['template.' . $conf['template']] = 'template.info.txt unreadable';
+        }
     }
 
     // endregion
