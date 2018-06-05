@@ -174,6 +174,10 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
             return false;
         }
 
+        // add backtrace
+        $error['trace'] = debug_backtrace();
+        array_shift($error['trace']);
+
         // log it
         $event = Event::fromError($error);
         $helper->logEvent($event);

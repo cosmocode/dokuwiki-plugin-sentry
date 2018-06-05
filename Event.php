@@ -138,20 +138,22 @@ class Event
      */
     protected function setError($error)
     {
+        // a stack trace is optional
+        if (isset($error['trace'])) {
+            $trace = $error['trace'];
+        } else {
+            $trace = [$error];
+        }
+        $trace = self::backTraceFrames($trace);
+
+        // create the exception entry
         $this->data['exception'] = [
             'values' => [
                 [
                     'type' => $this->errorTypeToString($error['type']),
                     'value' => $error['message'],
                     'stacktrace' => [
-                        'frames' => [
-                            [
-                                'filename' => $error['file'],
-                                'function' => '',
-                                'lineno' => $error['line'],
-                                'vars' => [],
-                            ],
-                        ],
+                        'frames' => $trace
                     ],
                 ],
             ],
@@ -325,7 +327,7 @@ class Event
      */
     protected function errorTypeToSeverity($type)
     {
-        if(isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][0];
+        if (isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][0];
         return self::LVL_ERROR;
     }
 
@@ -337,7 +339,7 @@ class Event
      */
     protected function errorTypeToString($type)
     {
-        if(isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
+        if (isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
         return 'E_UNKNOWN_ERROR_TYPE';
     }
 
@@ -353,9 +355,9 @@ class Event
         foreach (array_reverse($trace) as $frame) {
             $frames[] = [
                 'filename' => $frame['file'],
-                'function' => $frame['function'],
                 'lineno' => $frame['line'],
-                'vars' => $frame['args'],
+                'function' => isset($frame['function']) ? $frame['function'] : '',
+                'vars' => isset($frame['args']) ? $frame['args'] : [],
             ];
         }
         return $frames;
