@@ -277,6 +277,13 @@ class Event
         $this->addTemplateToModules();
     }
 
+    /**
+     * Writes the enabled plugins and their version to the modules section
+     *
+     * If a plugin.info.txt can not be read, than an error message is recorded instead of the version
+     *
+     * see https://docs.sentry.io/clientdev/attributes/#optional-attributes
+     */
     protected function addPluginsToModules()
     {
         /* @var \Doku_Plugin_Controller $plugin_controller */
@@ -293,6 +300,13 @@ class Event
         }
     }
 
+    /**
+     * Writes the current template and its version to the modules section
+     *
+     * If a template.info.txt can not be read, than an error message is recorded instead of the version
+     *
+     * see https://docs.sentry.io/clientdev/attributes/#optional-attributes
+     */
     protected function addTemplateToModules()
     {
         global $conf;
