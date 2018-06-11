@@ -143,6 +143,7 @@ class Event
     {
         $props = get_object_vars($e);
         if (!is_array($props)) return;
+        if (isset($props['xdebug_message'])) unset($props['xdebug_message']); // nothing interesting in there
         if (!isset($this->data['extra'])) $this->data['extra'] = [];
         $this->data['extra'] = array_merge($this->data['extra'], $props);
     }
