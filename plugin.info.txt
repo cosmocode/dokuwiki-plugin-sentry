@@ -1,7 +1,7 @@
 base   sentry
 author Andreas Gohr
 email  gohr@cosmocode.de
-date   2018-06-05
+date   2018-06-11
 name   sentry plugin
 desc   Log errors with sentry
 url    https://www.dokuwiki.org/plugin:sentry
