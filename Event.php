@@ -129,6 +129,22 @@ class Event
             'value' => $e->getMessage(),
             'stacktrace' => ['frames' => self::backTraceFrames($e->getTrace())],
         ];
+
+        // extract extras
+        $this->extractExceptionExtras($e);
+    }
+
+    /**
+     * Extracts all public properties of an exception into the extra array
+     *
+     * @param \Throwable $e
+     */
+    protected function extractExceptionExtras(\Throwable $e)
+    {
+        $props = get_object_vars($e);
+        if (!is_array($props)) return;
+        if (!isset($this->data['extra'])) $this->data['extra'] = [];
+        $this->data['extra'] = array_merge($this->data['extra'], $props);
     }
 
     /**
