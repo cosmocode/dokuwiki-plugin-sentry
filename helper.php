@@ -70,9 +70,9 @@ class helper_plugin_sentry extends DokuWiki_Plugin
      *
      * If you need more control over the logged Event, use logEvent()
      *
-     * @param Throwable $e
+     * @param \Throwable|\Exception $e
      */
-    public function logException(\Throwable $e)
+    public function logException($e)
     {
         $this->logEvent(Event::fromException($e));
 
@@ -117,10 +117,10 @@ class helper_plugin_sentry extends DokuWiki_Plugin
     /**
      * Format an exception for the user in HTML
      *
-     * @param Throwable $e
+     * @param \Throwable|\Exception $e
      * @return string the HTML
      */
-    public function formatException(\Throwable $e)
+    public function formatException($e)
     {
         global $conf;
         $html = '<div style="width:60%; margin: auto; background-color: #fcc;

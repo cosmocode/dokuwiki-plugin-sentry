@@ -137,9 +137,9 @@ class action_plugin_sentry_errors extends DokuWiki_Action_Plugin
     /**
      * Send exceptions to sentry
      *
-     * @param Throwable $e
+     * @param \Throwable|\Exception $e
      */
-    public function exceptionHandler(\Throwable $e)
+    public function exceptionHandler($e)
     {
         /** @var helper_plugin_sentry $helper */
         $helper = plugin_load('helper', 'sentry');

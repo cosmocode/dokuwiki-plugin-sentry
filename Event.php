@@ -102,9 +102,9 @@ class Event
      *
      * Recurses into previous exceptions
      *
-     * @param \Throwable $e
+     * @param \Throwable|\Exception $e
      */
-    public function addException(\Throwable $e)
+    public function addException($e)
     {
         if (!is_array($this->data['exception'])) {
             $this->data['exception'] = ['values' => []];
@@ -344,7 +344,7 @@ class Event
      */
     protected function errorTypeToSeverity($type)
     {
-        if (isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][0];
+        if (!empty(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][0];
         return self::LVL_ERROR;
     }
 
@@ -356,7 +356,7 @@ class Event
      */
     protected function errorTypeToString($type)
     {
-        if (isset(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
+        if (!empty(self::CORE_ERRORS[$type])) return self::CORE_ERRORS[$type][1];
         return 'E_UNKNOWN_ERROR_TYPE';
     }
 
@@ -396,10 +396,10 @@ class Event
     /**
      * Generate an event from a exception
      *
-     * @param \Throwable $e
+     * @param \Throwable|\Exception $e
      * @return Event
      */
-    static public function fromException(\Throwable $e)
+    static public function fromException($e)
     {
         $ev = new Event();
         $ev->addException($e);
