@@ -89,6 +89,31 @@ class helper_plugin_sentry extends DokuWiki_Plugin
         if ($this->sendEvent($event)) $this->deleteEvent($event->getID());
     }
 
+
+    /**
+     * Log a message and optionally some data to sentry
+     *
+     * @param string $message the raw message string
+     * @param array  $extra
+     */
+    public function logMessage($message, array $extra = [])
+    {
+        $backtrace = debug_backtrace();
+        array_shift($backtrace); // remove this logMessage method
+
+        $eventData = [
+            'sentry.interfaces.Message' => [
+                'message' => $message,
+            ],
+            'stacktrace' => ['frames' => Event::backTraceFrames($backtrace)],
+            'extra' => $extra,
+        ];
+
+        $event = new Event($eventData);
+        $event->setLogLevel('info');
+        $this->logEvent($event);
+    }
+
     /**
      * Format an exception for the user in HTML
      *
