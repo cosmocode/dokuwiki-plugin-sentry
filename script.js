@@ -11,6 +11,14 @@ var SentryPlugin = (function () {
      * @param {object} data Any additional data to pass in the sentry event
      */
     var logSentryException = function (e, data) {
+
+        data.request = {
+            url: window.location.href,
+            headers: {
+                referer: document.referrer
+            }
+        };
+
         jQuery.post(DOKU_BASE + 'lib/exe/ajax.php', {
             'call': 'plugin_sentry',
             'name': e.name,

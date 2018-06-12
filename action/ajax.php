@@ -56,6 +56,7 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
             ],
         ];
         $sentryData = array_merge($sentryData, $INPUT->arr('additionalData'));
+        $sentryData['extra']['original_stack'] = $INPUT->str('stack');
 
         $sentryEvent = new \dokuwiki\plugin\sentry\Event($sentryData);
 
