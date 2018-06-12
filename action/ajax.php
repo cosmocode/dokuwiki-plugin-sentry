@@ -56,6 +56,7 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
             ],
         ];
         $sentryData = array_merge($sentryData, $INPUT->arr('additionalData'));
+        $sentryData['extra']['original_stack'] = $INPUT->str('stack');
 
         $sentryEvent = new \dokuwiki\plugin\sentry\Event($sentryData);
 
@@ -73,8 +74,9 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
      */
     protected function parseJavaScriptStacktrace($trace)
     {
-        $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?\S+' .
-            '(?: \[as \S+\])?)) )?\(?((?:file|http|https):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
+        $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?(?:new )?\S+'.
+            '(?: \[as \S+\])?)) )?\(?((?:[-\w]+):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
+
         $gecko = '/^(?:\s*([^@]*)(?:\((.*?)\))?@)?(\S.*?):(\d+)(?::(\d+))?\s*$/i';
 
         $frames = [];
@@ -89,13 +91,13 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
                 ];
             } elseif (preg_match($chrome, $line, $parts)) {
                 $frames[] = [
-                    'file' => $parts[2] ? $parts[2] : '<unknown file>',
+                    'filename' => $parts[2] ? $parts[2] : '<unknown file>',
                     'function' => $parts[1] ? $parts[1] : '<unknown function>',
                     'lineno' => (int)$parts[3],
                     'colno' => (int)$parts[4]
                 ];
             }
         }
-        return $frames;
+        return array_reverse($frames);
     }
 }
