@@ -91,7 +91,7 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
                 ];
             } elseif (preg_match($chrome, $line, $parts)) {
                 $frames[] = [
-                    'file' => $parts[2] ? $parts[2] : '<unknown file>',
+                    'filename' => $parts[2] ? $parts[2] : '<unknown file>',
                     'function' => $parts[1] ? $parts[1] : '<unknown function>',
                     'lineno' => (int)$parts[3],
                     'colno' => (int)$parts[4]
