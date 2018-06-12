@@ -98,6 +98,6 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
                 ];
             }
         }
-        return $frames;
+        return array_reverse($frames);
     }
 }
