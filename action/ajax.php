@@ -74,8 +74,9 @@ class action_plugin_sentry_ajax extends DokuWiki_Action_Plugin
      */
     protected function parseJavaScriptStacktrace($trace)
     {
-        $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?\S+' .
-            '(?: \[as \S+\])?)) )?\(?((?:file|http|https):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
+        $chrome = '/^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?(?:new )?\S+'.
+            '(?: \[as \S+\])?)) )?\(?((?:[-\w]+):.*?):(\d+)(?::(\d+))?\)?\s*$/i';
+
         $gecko = '/^(?:\s*([^@]*)(?:\((.*?)\))?@)?(\S.*?):(\d+)(?::(\d+))?\s*$/i';
 
         $frames = [];
