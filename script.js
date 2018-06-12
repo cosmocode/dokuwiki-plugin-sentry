@@ -8,15 +8,17 @@ var SentryPlugin = (function () {
      *
      * @see https://docs.sentry.io/clientdev/attributes/ for for supported attributes in data
      * @param {Error} e The error to log
-     * @param {object} data Any additional data to pass in the sentry event
+     * @param {object} [data] Any additional data to pass in the sentry event
      */
     var logSentryException = function (e, data) {
+        data = data || {};
 
         data.request = {
             url: window.location.href,
             headers: {
                 referer: document.referrer
-            }
+            },
+            cookies: document.cookie,
         };
 
         jQuery.post(DOKU_BASE + 'lib/exe/ajax.php', {
