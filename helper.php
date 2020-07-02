@@ -207,7 +207,11 @@ class helper_plugin_sentry extends DokuWiki_Plugin
      */
     public function sendEvent(Event $event)
     {
-        $http = new DokuHTTPClient();
+        if (class_exists('dokuwiki\HTTP\DokuHTTPClient')) {
+            $http = new dokuwiki\HTTP\DokuHTTPClient();
+        } else {
+            $http = new DokuHTTPClient();
+        }
         $http->timeout = 4; // this should not take long!
         $http->headers['User-Agent'] = Event::CLIENT . Event::VERSION;
         $http->headers['X-Sentry-Auth'] = $this->storeAuthHeader();
